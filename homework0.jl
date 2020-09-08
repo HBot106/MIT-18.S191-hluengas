@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.11.12
+# v0.11.13
 
 using Markdown
 using InteractiveUtils
@@ -17,7 +17,21 @@ end
 md"_homework 0, version 2_"
 
 # ╔═╡ 7308bc54-e6cd-11ea-0eab-83f7535edf25
+# edit the code below to set your name and kerberos ID (i.e. email without @mit.edu)
 
+student = (name = "Henry Luengas", kerberos_id = "HBot106")
+
+# press the ▶ button in the bottom right of this cell to run your edits
+# or use Shift+Enter
+
+# you might need to wait until all other cells in this notebook have completed running. 
+# scroll down the page to see what's up
+
+# ╔═╡ cdff6730-e785-11ea-2546-4969521b33a7
+md"""
+
+Submission by: **_$(student.name)_** ($(student.kerberos_id)@mit.edu)
+"""
 
 # ╔═╡ a2181260-e6cd-11ea-2a69-8d9d31d1ef0e
 md"""
@@ -67,7 +81,7 @@ This is because the square root must be between the numbers `x/a` and `a`. Why?
 
 # ╔═╡ bccf0e88-e754-11ea-3ab8-0170c2d44628
 ex_1_1 = md"""
-your answer here
+If a is greater than the true sqrt, then x/a must be less than the true sqrt. Conversly if a is less than the true sqrt, then x/a must be greater than the true sqrt. Therefore the true sqrt is always between a and x/a or equal to both of them.
 """ 
 
 # you might need to wait until all other cells in this notebook have completed running. 
@@ -84,14 +98,17 @@ md"### Exercise 1.2
 Write a function newton_sqrt(x) which implements the above algorithm."
 
 # ╔═╡ 4896bf0c-e754-11ea-19dc-1380bb356ab6
-function newton_sqrt(x, error_margin=0.01, a=x / 2) # a=x/2 is the default value of `a`
+function newton_sqrt(x, error_margin=0.01, a=x / 2)
+	input = x
+	guess = a
+	result = x/a
+	average = (guess + result) / 2
 	
-	while abs(x/a - a) > error_margin	
-		b = x / a
-		a = (b + a) / 2
-	
+	if (abs(guess - result) < error_margin)
+		return(result)
+	else
+		return(newton_sqrt(input, error_margin, average))
 	end
-	return a
 end
 
 # ╔═╡ 7a01a508-e78a-11ea-11da-999d38785348
@@ -174,7 +191,7 @@ end
 md"Just like the definition above, our `sierpinksi` function is _recursive_: it calls itself."
 
 # ╔═╡ 02b9c9d6-e752-11ea-0f32-91b7b6481684
-complexity = 0
+complexity = 1
 
 # ╔═╡ 1eb79812-e7b5-11ea-1c10-63b24803dd8a
 if complexity == 3 
@@ -206,16 +223,13 @@ area_sierpinski(1) = 0.??
 ```
 """
 
-# ╔═╡ 57e15b70-ee07-11ea-2799-417ef4ba2dbd
-(3/4)^2
-
 # ╔═╡ ca8d2f72-e7b6-11ea-1893-f1e6d0a20dc7
 function area_sierpinski(n)
-	# return 1.0
-	
-	return (3/4) ^ n
-	
-
+	if n == 0
+		return 1.0
+	else
+		return area_sierpinski(n-1) * 3 / 4
+	end
 end
 
 # ╔═╡ 71c78614-e7bc-11ea-0959-c7a91a10d481
@@ -248,6 +262,14 @@ md"""
 
 # ╔═╡ a60a492a-e7bc-11ea-0f0b-75d81ce46a01
 md"That's it for now, see you next week!"
+
+# ╔═╡ b3c7a050-e855-11ea-3a22-3f514da746a4
+if student.kerberos_id === "jazz"
+	md"""
+!!! danger "Oops!"
+    **Before you submit**, remember to fill in your name and kerberos ID at the top of this notebook!
+	"""
+end
 
 # ╔═╡ d3625d20-e6ce-11ea-394a-53208540d626
 
@@ -299,6 +321,7 @@ has area **$(area_sierpinski(n))**
 
 # ╔═╡ Cell order:
 # ╟─fafae38e-e852-11ea-1208-732b4744e4c2
+# ╟─cdff6730-e785-11ea-2546-4969521b33a7
 # ╠═7308bc54-e6cd-11ea-0eab-83f7535edf25
 # ╟─a2181260-e6cd-11ea-2a69-8d9d31d1ef0e
 # ╟─094e39c8-e6ce-11ea-131b-07c4a1199edf
@@ -326,7 +349,6 @@ has area **$(area_sierpinski(n))**
 # ╟─d7e8202c-e7b5-11ea-30d3-adcd6867d5f5
 # ╠═df0a4068-e7b2-11ea-2475-81b237d492b3
 # ╟─f22222b4-e7b5-11ea-0ea0-8fa368d2a014
-# ╠═57e15b70-ee07-11ea-2799-417ef4ba2dbd
 # ╠═ca8d2f72-e7b6-11ea-1893-f1e6d0a20dc7
 # ╟─71c78614-e7bc-11ea-0959-c7a91a10d481
 # ╟─c21096c0-e856-11ea-3dc5-a5b0cbf29335
@@ -335,6 +357,7 @@ has area **$(area_sierpinski(n))**
 # ╟─c1ecad86-e7bc-11ea-1201-23ee380181a1
 # ╟─c9bf4288-e6ce-11ea-0e13-a36b5e685998
 # ╟─a60a492a-e7bc-11ea-0f0b-75d81ce46a01
+# ╟─b3c7a050-e855-11ea-3a22-3f514da746a4
 # ╟─d3625d20-e6ce-11ea-394a-53208540d626
-# ╠═dfdeab34-e751-11ea-0f90-2fa9bbdccb1e
-# ╠═b923d394-e750-11ea-1971-595e09ab35b5
+# ╟─dfdeab34-e751-11ea-0f90-2fa9bbdccb1e
+# ╟─b923d394-e750-11ea-1971-595e09ab35b5
