@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.11.13
+# v0.11.14
 
 using Markdown
 using InteractiveUtils
@@ -148,8 +148,8 @@ md"""
 
 # ╔═╡ b6b65b94-edf0-11ea-3686-fbff0ff53d08
 function create_bar()
-	bar = [0 for i in 1:100]
-	bar[40:60] .= 1 
+	bar = [0.0 for i in 1:100]
+	bar[40:60] .= 1.0 
 	return bar
 end
 
@@ -469,7 +469,7 @@ You've seen some colored lines in this notebook to visualize arrays. Can you mak
 """
 
 # ╔═╡ 01070e28-ee0f-11ea-1928-a7919d452bdd
-
+colored_line(v)
 
 # ╔═╡ 7522f81e-ee1c-11ea-35af-a17eb257ff1a
 md"Try changing `n` and `v` around. Notice that you can run the cell `v = rand(n)` again to regenerate new random values."
@@ -484,10 +484,18 @@ A better solution is to use the *closest* value that is inside the vector. Effec
 👉 Write a function `extend(v, i)` that checks whether the position $i$ is inside `1:n`. If so, return the $i$th component of `v`; otherwise, return the nearest end value.
 """
 
+# ╔═╡ 7c85fd4c-f379-11ea-2d3a-75c7d438abe0
+size(v)
+
 # ╔═╡ 802bec56-ee09-11ea-043e-51cf1db02a34
 function extend(v, i)
-	
-	return missing
+	if i < 1
+		return v[1]
+	elseif i > size(v)[1]
+		return v[size(v)[1]]
+	else
+		return v[i]
+	end
 end
 
 # ╔═╡ b7f3994c-ee1b-11ea-211a-d144db8eafc2
@@ -526,8 +534,23 @@ md"""
 
 # ╔═╡ 807e5662-ee09-11ea-3005-21fdcc36b023
 function blur_1D(v, l)
+	v_blurred = copy(v)
 	
-	return missing
+# 	for each pixel in the line
+	for i in 1:length(v)
+# 		average over the window
+		avg = 0
+		for j in 0-l:l
+			avg += extend(v, i+j)
+		end
+# 		check for div by zero
+		if l > 0
+			avg /= 2*l
+		end
+# 		set blurred result
+		v_blurred[i] = avg
+	end
+	return v_blurred
 end
 
 # ╔═╡ 808deca8-ee09-11ea-0ee3-1586fa1ce282
@@ -552,8 +575,14 @@ md"""
 👉 Apply the box blur to your vector `v`. Show the original and the new vector by creating two cells that call `colored_line`. Make the parameter $\ell$ interactive, and call it `l_box` instead of just `l` to avoid a variable naming conflict.
 """
 
-# ╔═╡ ca1ac5f4-ee1c-11ea-3d00-ff5268866f87
+# ╔═╡ a9c77756-f37e-11ea-2309-1952454857d3
+@bind l_box Slider(0:1:10, show_value=true)
 
+# ╔═╡ ca1ac5f4-ee1c-11ea-3d00-ff5268866f87
+colored_line(v)
+
+# ╔═╡ 5d718b7a-f37d-11ea-282d-6fcc684e1742
+colored_line(blur_1D(v, l_box))
 
 # ╔═╡ 80ab64f4-ee09-11ea-29b4-498112ed0799
 md"""
@@ -571,8 +600,18 @@ Again, we need to take care about what happens if $v_{i -n }$ falls off the end 
 
 # ╔═╡ 28e20950-ee0c-11ea-0e0a-b5f2e570b56e
 function convolve_vector(v, k)
+	l = (length(k) - 1) ÷ 2
+	v_out = copy(v)
 	
-	return missing
+	for i in 1:length(v)
+		sum = 0
+		for j in 0-l:l
+			sum += (extend(v, i+j) * k[j+l+1])
+		end
+		v_out[i] = sum 
+	end
+		
+	return v_out
 end
 
 # ╔═╡ 93284f92-ee12-11ea-0342-833b1a30625c
@@ -603,17 +642,26 @@ and then **normalize** so that the sum of the resulting kernel is 1.
 For simplicity you can take $\sigma=1$.
 """
 
+# ╔═╡ 4af3cbf8-f381-11ea-1f3b-e58d36a0f80d
+pi
+
 # ╔═╡ 1c8b4658-ee0c-11ea-2ede-9b9ed7d3125e
 function gaussian_kernel(n)
-	
-	return missing
+	gauss = [(1/2/pi)^(x*x/2) for x in -n:n]
+	return gauss ./ sum(gauss)
 end
+
+# ╔═╡ 2a9dd06a-ee13-11ea-3f84-67bb309c77a8
+@bind gaussian_kernel_size_1D Slider(0:1:10, show_value=true)
+
+# ╔═╡ e7e1c748-f382-11ea-1ef3-d1f1edeee00b
+gaussian_kernel(gaussian_kernel_size_1D)
+
+# ╔═╡ 0544ebe0-f382-11ea-3034-61617b5c295e
+sum(gaussian_kernel(gaussian_kernel_size_1D))
 
 # ╔═╡ f8bd22b8-ee14-11ea-04aa-ab16fd01826e
 md"Let's test your kernel function!"
-
-# ╔═╡ 2a9dd06a-ee13-11ea-3f84-67bb309c77a8
-gaussian_kernel_size_1D = 3 # change this value, or turn me into a slider!
 
 # ╔═╡ 38eb92f6-ee13-11ea-14d7-a503ac04302e
 test_gauss_1D_a = let
@@ -666,8 +714,20 @@ md"""
 
 # ╔═╡ 7c2ec6c6-ee15-11ea-2d7d-0d9401a5e5d1
 function extend_mat(M::AbstractMatrix, i, j)
-	
-	return missing
+# 	i clamp
+	if i < 1
+		i = 1
+	elseif i > size(M)[1]
+		i = size(M)[1]
+	end
+# 	j clamp
+	if j < 1
+		j = 1
+	elseif j > size(M)[2]
+		j = size(M)[2]
+	end
+# 	
+	return M[i,j]
 end
 
 # ╔═╡ 9afc4dca-ee16-11ea-354f-1d827aaa61d2
@@ -688,10 +748,13 @@ md"Extended with your `extend`:"
 # ╔═╡ e1dc0622-ee16-11ea-274a-3b6ec9e15ab5
 [extend_mat(small_image, i, j) for (i,j) in Iterators.product(-1:7,-1:7)]
 
+# ╔═╡ 30670882-f387-11ea-228e-8348afcc76ec
+@bind padding_amount Slider(0:5:100, show_value=true)
+
 # ╔═╡ 3cd535e4-ee26-11ea-2482-fb4ad43dda19
 let
 	philip_head = philip[250:430,110:230]
-	[extend_mat(philip_head, i, j) for (i,j) in Iterators.product(-50:size(philip_head,1)+51, (-50:size(philip_head,2)+51))]
+	[extend_mat(philip_head, i, j) for (i,j) in Iterators.product(-padding_amount:size(philip_head,1)+padding_amount+1, (-padding_amount:size(philip_head,2)+padding_amount+1))]
 end
 
 # ╔═╡ 7c41f0ca-ee15-11ea-05fb-d97a836659af
@@ -702,8 +765,24 @@ md"""
 
 # ╔═╡ 8b96e0bc-ee15-11ea-11cd-cfecea7075a0
 function convolve_image(M::AbstractMatrix, K::AbstractMatrix)
+# 	copy input and get sizes for image and kernel
+	output = copy(M)
+	h = size(M)[1]
+	w = size(M)[2]
+	l1 = (size(K)[1] - 1) ÷ 2
+	l2 = (size(K)[2] - 1) ÷ 2
 	
-	return missing
+# 	loop over each image pixel
+	for i in 1:h, j in 1:w
+# 		reset sum to black, using color type from image
+		sum = M[i,j] - M[i,j]
+# 		loop over each kernel position
+		for x in -l1:l1, y in -l2:l2
+			sum += (extend_mat(M, i + x, j + y) * K[x + l1 + 1, y + l2 + 1])
+		end
+		output[i,j] = sum
+	end
+	return output
 end
 
 # ╔═╡ 5a5135c6-ee1e-11ea-05dc-eb0c683c2ce5
@@ -714,9 +793,9 @@ test_image_with_border = [get(small_image, (i, j), Gray(0)) for (i,j) in Iterato
 
 # ╔═╡ 275a99c8-ee1e-11ea-0a76-93e3618c9588
 K_test = [
-	0   0  0
-	1/2 0  1/2
-	0   0  0
+	.05   .10  .05
+	.10 0.4  .10
+	.05   .10  .05
 ]
 
 # ╔═╡ 42dfa206-ee1e-11ea-1fcd-21671042064c
@@ -747,14 +826,29 @@ Here, the 2D Gaussian kernel will be defined as
 $$G(x,y)=\frac{1}{2\pi \sigma^2}e^{\frac{-(x^2+y^2)}{2\sigma^2}}$$
 """
 
-# ╔═╡ aad67fd0-ee15-11ea-00d4-274ec3cda3a3
-function with_gaussian_blur(image)
-	
-	return missing
+# ╔═╡ 06624ef0-f38c-11ea-0075-731ca690efba
+ℯ
+
+# ╔═╡ 322da66a-f38c-11ea-13b1-217ab5b87f72
+function gaussian_kernel_2d(n)
+	gauss = [(1/2/pi) * ℯ ^ (-(x^2 + y^2)/2) for x in -n:n, y in -n:n]
+	return gauss ./ sum(gauss)
 end
 
 # ╔═╡ 8ae59674-ee18-11ea-3815-f50713d0fa08
 md"_Let's make it interactive. 💫_"
+
+# ╔═╡ bfaf92c8-f38c-11ea-088c-c5cbd0cba481
+@bind kernel_size Slider(0:1:3, show_value=true)
+
+# ╔═╡ aad67fd0-ee15-11ea-00d4-274ec3cda3a3
+function with_gaussian_blur(image)
+	
+	return convolve_image(image, gaussian_kernel_2d(kernel_size))
+end
+
+# ╔═╡ a75701c4-ee18-11ea-2863-d3042e71a68b
+with_gaussian_blur(philip)
 
 # ╔═╡ 7c6642a6-ee15-11ea-0526-a1aac4286cdd
 md"""
@@ -799,11 +893,27 @@ $$G_\text{total} = \sqrt{G_x^2 + G_y^2}.$$
 For simplicity you can choose one of the "channels" (colours) in the image to apply this to.
 """
 
+# ╔═╡ d534ac34-f399-11ea-3523-afe7f3cdd3b6
+Sx = hcat([1.0,2.0,1.0],[0.0,0.0,0.0],[-1.0,-2.0,-1.0])
+
+# ╔═╡ dbe3d7bc-f399-11ea-21e4-4b66cb8e7859
+Sy = hcat([1.0,0.0,-1.0],[2.0,0.0,-2.0],[1.0,0.0,-1.0])
+
 # ╔═╡ 9eeb876c-ee15-11ea-1794-d3ea79f47b75
 function with_sobel_edge_detect(image)
+	Sx = hcat([1.0,2.0,1.0],[0.0,0.0,0.0],[-1.0,-2.0,-1.0])
+	Sy = hcat([1.0,0.0,-1.0],[2.0,0.0,-2.0],[1.0,0.0,-1.0])
 	
-	return missing
+	edge_x = convolve_image(image, Sx)
+	edge_y = convolve_image(image, Sy)
+	
+# 	combined .= sqrt(edge_x^2 + edge_y^2)
+	
+	return image
 end
+
+# ╔═╡ 1bf94c00-ee19-11ea-0e3c-e12bc68d8e28
+with_sobel_edge_detect(philip)
 
 # ╔═╡ 1b85ee76-ee10-11ea-36d7-978340ef61e6
 md"""
@@ -1324,12 +1434,6 @@ function camera_input(;max_size=200, default_url="https://i.imgur.com/SUmi94P.pn
 """ |> HTML
 end
 
-# ╔═╡ 94c0798e-ee18-11ea-3212-1533753eabb6
-@bind gauss_raw_camera_data camera_input(;max_size=100)
-
-# ╔═╡ 1a0324de-ee19-11ea-1d4d-db37f4136ad3
-@bind sobel_raw_camera_data camera_input(;max_size=100)
-
 # ╔═╡ e15ad330-ee0d-11ea-25b6-1b1b3f3d7888
 
 function process_raw_camera_data(raw_camera_data)
@@ -1364,18 +1468,6 @@ function process_raw_camera_data(raw_camera_data)
 	
 	RGB.(reds, greens, blues)
 end
-
-# ╔═╡ f461f5f2-ee18-11ea-3d03-95f57f9bf09e
-gauss_camera_image = process_raw_camera_data(gauss_raw_camera_data);
-
-# ╔═╡ a75701c4-ee18-11ea-2863-d3042e71a68b
-with_gaussian_blur(gauss_camera_image)
-
-# ╔═╡ 1ff6b5cc-ee19-11ea-2ca8-7f00c204f587
-sobel_camera_image = Gray.(process_raw_camera_data(sobel_raw_camera_data));
-
-# ╔═╡ 1bf94c00-ee19-11ea-0e3c-e12bc68d8e28
-with_sobel_edge_detect(sobel_camera_image)
 
 # ╔═╡ Cell order:
 # ╠═83eb9ca0-ed68-11ea-0bc5-99a09c68f867
@@ -1478,21 +1570,24 @@ with_sobel_edge_detect(sobel_camera_image)
 # ╠═01070e28-ee0f-11ea-1928-a7919d452bdd
 # ╟─7522f81e-ee1c-11ea-35af-a17eb257ff1a
 # ╟─801d90c0-ee09-11ea-28d6-61b806de26dc
+# ╠═7c85fd4c-f379-11ea-2d3a-75c7d438abe0
 # ╠═802bec56-ee09-11ea-043e-51cf1db02a34
 # ╟─b7f3994c-ee1b-11ea-211a-d144db8eafc2
 # ╠═803905b2-ee09-11ea-2d52-e77ff79693b0
 # ╠═80479d98-ee09-11ea-169e-d166eef65874
 # ╠═805691ce-ee09-11ea-053d-6d2e299ee123
 # ╟─806e5766-ee0f-11ea-1efc-d753cd83d086
-# ╟─38da843a-ee0f-11ea-01df-bfa8b1317d36
+# ╠═38da843a-ee0f-11ea-01df-bfa8b1317d36
 # ╟─9bde9f92-ee0f-11ea-27f8-ffef5fce2b3c
-# ╟─45c4da9a-ee0f-11ea-2c5b-1f6704559137
+# ╠═45c4da9a-ee0f-11ea-2c5b-1f6704559137
 # ╟─bcf98dfc-ee1b-11ea-21d0-c14439500971
 # ╟─80664e8c-ee09-11ea-0702-711bce271315
 # ╠═807e5662-ee09-11ea-3005-21fdcc36b023
 # ╟─808deca8-ee09-11ea-0ee3-1586fa1ce282
 # ╟─809f5330-ee09-11ea-0e5b-415044b6ac1f
-# ╠═ca1ac5f4-ee1c-11ea-3d00-ff5268866f87
+# ╟─a9c77756-f37e-11ea-2309-1952454857d3
+# ╟─ca1ac5f4-ee1c-11ea-3d00-ff5268866f87
+# ╟─5d718b7a-f37d-11ea-282d-6fcc684e1742
 # ╟─ea435e58-ee11-11ea-3785-01af8dd72360
 # ╟─80ab64f4-ee09-11ea-29b4-498112ed0799
 # ╠═28e20950-ee0c-11ea-0e0a-b5f2e570b56e
@@ -1502,15 +1597,18 @@ with_sobel_edge_detect(sobel_camera_image)
 # ╟─cf73f9f8-ee12-11ea-39ae-0107e9107ef5
 # ╟─7ffd14f8-ee1d-11ea-0343-b54fb0333aea
 # ╟─80b7566a-ee09-11ea-3939-6fab470f9ec8
+# ╠═4af3cbf8-f381-11ea-1f3b-e58d36a0f80d
 # ╠═1c8b4658-ee0c-11ea-2ede-9b9ed7d3125e
-# ╟─f8bd22b8-ee14-11ea-04aa-ab16fd01826e
 # ╠═2a9dd06a-ee13-11ea-3f84-67bb309c77a8
+# ╠═e7e1c748-f382-11ea-1ef3-d1f1edeee00b
+# ╠═0544ebe0-f382-11ea-3034-61617b5c295e
+# ╟─f8bd22b8-ee14-11ea-04aa-ab16fd01826e
 # ╟─b424e2aa-ee14-11ea-33fa-35491e0b9c9d
 # ╠═38eb92f6-ee13-11ea-14d7-a503ac04302e
-# ╟─bc1c20a4-ee14-11ea-3525-63c9fa78f089
+# ╠═bc1c20a4-ee14-11ea-3525-63c9fa78f089
 # ╠═24c21c7c-ee14-11ea-1512-677980db1288
 # ╟─27847dc4-ee0a-11ea-0651-ebbbb3cfd58c
-# ╠═b01858b6-edf3-11ea-0826-938d33c19a43
+# ╟─b01858b6-edf3-11ea-0826-938d33c19a43
 # ╟─7c1bc062-ee15-11ea-30b1-1b1e76520f13
 # ╠═7c2ec6c6-ee15-11ea-2d7d-0d9401a5e5d1
 # ╟─649df270-ee24-11ea-397e-79c4355e38db
@@ -1519,8 +1617,9 @@ with_sobel_edge_detect(sobel_camera_image)
 # ╟─e3616062-ee27-11ea-04a9-b9ec60842a64
 # ╟─e5b6cd34-ee27-11ea-0d60-bd4796540b18
 # ╟─d06ea762-ee27-11ea-2e9c-1bcff86a3fe0
-# ╟─e1dc0622-ee16-11ea-274a-3b6ec9e15ab5
+# ╠═e1dc0622-ee16-11ea-274a-3b6ec9e15ab5
 # ╟─efd1ceb4-ee1c-11ea-350e-f7e3ea059024
+# ╟─30670882-f387-11ea-228e-8348afcc76ec
 # ╟─3cd535e4-ee26-11ea-2482-fb4ad43dda19
 # ╟─7c41f0ca-ee15-11ea-05fb-d97a836659af
 # ╠═8b96e0bc-ee15-11ea-11cd-cfecea7075a0
@@ -1532,17 +1631,18 @@ with_sobel_edge_detect(sobel_camera_image)
 # ╟─6e53c2e6-ee1e-11ea-21bd-c9c05381be07
 # ╠═e7f8b41a-ee25-11ea-287a-e75d33fbd98b
 # ╟─8a335044-ee19-11ea-0255-b9391246d231
-# ╠═7c50ea80-ee15-11ea-328f-6b4e4ff20b7e
+# ╟─7c50ea80-ee15-11ea-328f-6b4e4ff20b7e
+# ╠═06624ef0-f38c-11ea-0075-731ca690efba
+# ╠═322da66a-f38c-11ea-13b1-217ab5b87f72
 # ╠═aad67fd0-ee15-11ea-00d4-274ec3cda3a3
 # ╟─8ae59674-ee18-11ea-3815-f50713d0fa08
-# ╟─94c0798e-ee18-11ea-3212-1533753eabb6
+# ╠═bfaf92c8-f38c-11ea-088c-c5cbd0cba481
 # ╠═a75701c4-ee18-11ea-2863-d3042e71a68b
-# ╟─f461f5f2-ee18-11ea-3d03-95f57f9bf09e
 # ╟─7c6642a6-ee15-11ea-0526-a1aac4286cdd
+# ╠═d534ac34-f399-11ea-3523-afe7f3cdd3b6
+# ╠═dbe3d7bc-f399-11ea-21e4-4b66cb8e7859
 # ╠═9eeb876c-ee15-11ea-1794-d3ea79f47b75
-# ╟─1a0324de-ee19-11ea-1d4d-db37f4136ad3
 # ╠═1bf94c00-ee19-11ea-0e3c-e12bc68d8e28
-# ╟─1ff6b5cc-ee19-11ea-2ca8-7f00c204f587
 # ╟─0001f782-ee0e-11ea-1fb4-2b5ef3d241e2
 # ╠═1b85ee76-ee10-11ea-36d7-978340ef61e6
 # ╠═477d0a3c-ee10-11ea-11cf-07b0e0ce6818
