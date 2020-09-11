@@ -893,23 +893,17 @@ $$G_\text{total} = \sqrt{G_x^2 + G_y^2}.$$
 For simplicity you can choose one of the "channels" (colours) in the image to apply this to.
 """
 
-# ╔═╡ d534ac34-f399-11ea-3523-afe7f3cdd3b6
-Sx = hcat([1.0,2.0,1.0],[0.0,0.0,0.0],[-1.0,-2.0,-1.0])
-
-# ╔═╡ dbe3d7bc-f399-11ea-21e4-4b66cb8e7859
-Sy = hcat([1.0,0.0,-1.0],[2.0,0.0,-2.0],[1.0,0.0,-1.0])
-
 # ╔═╡ 9eeb876c-ee15-11ea-1794-d3ea79f47b75
 function with_sobel_edge_detect(image)
-	Sx = hcat([1.0,2.0,1.0],[0.0,0.0,0.0],[-1.0,-2.0,-1.0])
-	Sy = hcat([1.0,0.0,-1.0],[2.0,0.0,-2.0],[1.0,0.0,-1.0])
+	image = convert(Array{Gray{Float64},2}, image)
+	
+	Sx = [1 0 -1; 2 0 -2; 1 0 -1]
+ 	Sy = [1 2 1; 0 0 0; -1 -2 -1]
 	
 	edge_x = convolve_image(image, Sx)
 	edge_y = convolve_image(image, Sy)
-	
-# 	combined .= sqrt(edge_x^2 + edge_y^2)
-	
-	return image
+		
+	return (edge_x.^2 .+ edge_y .^2).^0.5
 end
 
 # ╔═╡ 1bf94c00-ee19-11ea-0e3c-e12bc68d8e28
@@ -1639,8 +1633,6 @@ end
 # ╠═bfaf92c8-f38c-11ea-088c-c5cbd0cba481
 # ╠═a75701c4-ee18-11ea-2863-d3042e71a68b
 # ╟─7c6642a6-ee15-11ea-0526-a1aac4286cdd
-# ╠═d534ac34-f399-11ea-3523-afe7f3cdd3b6
-# ╠═dbe3d7bc-f399-11ea-21e4-4b66cb8e7859
 # ╠═9eeb876c-ee15-11ea-1794-d3ea79f47b75
 # ╠═1bf94c00-ee19-11ea-0e3c-e12bc68d8e28
 # ╟─0001f782-ee0e-11ea-1fb4-2b5ef3d241e2
