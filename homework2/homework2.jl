@@ -195,6 +195,9 @@ md"""
 Pluto will automatically time your change with `@benchmark` below.
 """
 
+# ╔═╡ f3e8a312-f50e-11ea-1ef5-5d33f9148f91
+deleteat!
+
 # ╔═╡ 90a22cc6-f327-11ea-1484-7fda90283797
 function remove_in_each_row_views(img, column_numbers)
 	@assert size(img, 1) == length(column_numbers) # same as the number of rows
@@ -209,6 +212,9 @@ function remove_in_each_row_views(img, column_numbers)
 	end
 	img′
 end
+
+# ╔═╡ 6dc9636e-f510-11ea-2921-2f7f3139b9d5
+(before=size(img), after=size(remove_in_each_row_views(img, 1:size(img, 1))))
 
 # ╔═╡ 3335e07c-f328-11ea-0e6c-8d38c8c0ad5b
 performance_experiment_views = @benchmark begin
@@ -523,6 +529,14 @@ function recursive_seam(energies, starting_pixel)
 	
 end
 
+# ╔═╡ e3c04f28-f509-11ea-3c99-fbb64c08b090
+md"Starting pixel: $(@bind recursive_starting_pixel Slider(1:size(greedy_test, 2); show_value=true))"
+
+# ╔═╡ 4df41846-f50a-11ea-2e44-2147d876d0ac
+# Don't know if the check box below is supposed to be able to finish in a reasonable time
+
+# But based on the Pika image above it seems to work properly
+
 # ╔═╡ 1d55333c-f393-11ea-229a-5b1e9cabea6a
 md"Compute shrunk image: $(@bind shrink_recursive CheckBox())"
 
@@ -536,7 +550,9 @@ md"""
 
 # ╔═╡ 6d993a5c-f373-11ea-0dde-c94e3bbd1552
 exhaustive_observation = md"""
-<your answer here>
+It gets all possible paths from the starting pixel. every recursive step checks all pixels below the current one until it gets to the bottom of the image.
+
+Including every possible starting pixel the number of paths would be between n*(2^m) and n*(3^m). n being the image width, it is the number of starting positions, with each starting position having between 2^height and 3^height paths under it depending if the path is on an edge or has space on either side.
 """
 
 # ╔═╡ ea417c2a-f373-11ea-3bb0-b1b5754f2fac
@@ -711,17 +727,6 @@ if shrink_greedy
 	greedy_carved[greedy_n]
 end
 
-# ╔═╡ d88bc272-f392-11ea-0efd-15e0e2b2cd4e
-if shrink_recursive
-	recursive_carved = shrink_n(img, 200, recursive_seam)
-	md"Shrink by: $(@bind recursive_n Slider(1:200, show_value=true))"
-end
-
-# ╔═╡ e66ef06a-f392-11ea-30ab-7160e7723a17
-if shrink_recursive
-	recursive_carved[greedy_n]
-end
-
 # ╔═╡ 4e3ef866-f3c5-11ea-3fb0-27d1ca9a9a3f
 if shrink_dict
 	dict_carved = shrink_n(img, 200, recursive_memoized_seam)
@@ -780,6 +785,25 @@ if compute_access
 	tracked.accesses[]
 end
 
+# ╔═╡ 05c14dc8-f511-11ea-374c-5354089a4bbb
+pika2 = decimate(load(download("https://art.pixilart.com/901d53bcda6b27b.png")),150)
+
+# ╔═╡ ca36dfbe-f510-11ea-262d-4beb22e86c24
+if shrink_recursive
+    recursive_carved = shrink_n(pika2, 3, recursive_seam)
+    md"Shrink by: $(@bind recursive_n Slider(1:3, show_value=true))"
+end
+
+# if shrink_recursive
+# 	recursive_carved = shrink_n(img, 200, recursive_seam)
+# 	md"Shrink by: $(@bind recursive_n Slider(1:200, show_value=true))"
+# end
+
+# ╔═╡ e66ef06a-f392-11ea-30ab-7160e7723a17
+if shrink_recursive
+	recursive_carved[recursive_n]
+end
+
 # ╔═╡ ffc17f40-f380-11ea-30ee-0fe8563c0eb1
 hint(text) = Markdown.MD(Markdown.Admonition("hint", "Hint", [text]))
 
@@ -815,6 +839,9 @@ end;
 
 # ╔═╡ 2a7e49b8-f395-11ea-0058-013e51baa554
 visualize_seam_algorithm(greedy_seam, greedy_test, greedy_starting_pixel)
+
+# ╔═╡ cab6afac-f509-11ea-34c2-a52677987c82
+visualize_seam_algorithm(recursive_seam, energy(pika), recursive_starting_pixel)
 
 # ╔═╡ ffe326e0-f380-11ea-3619-61dd0592d409
 yays = [md"Great!", md"Yay ❤", md"Great! 🎉", md"Well done!", md"Keep it up!", md"Good job!", md"Awesome!", md"You got the right answer!", md"Let's move on to the next section."]
@@ -930,7 +957,9 @@ bigbreak
 # ╠═e49235a4-f367-11ea-3913-f54a4a6b2d6b
 # ╟─145c0f58-f384-11ea-2b71-09ae83f66da2
 # ╟─837c43a4-f368-11ea-00a3-990a45cb0cbd
+# ╠═f3e8a312-f50e-11ea-1ef5-5d33f9148f91
 # ╠═90a22cc6-f327-11ea-1484-7fda90283797
+# ╠═6dc9636e-f510-11ea-2921-2f7f3139b9d5
 # ╠═3335e07c-f328-11ea-0e6c-8d38c8c0ad5b
 # ╟─d4ea4222-f388-11ea-3c8d-db0d651f5282
 # ╟─40d6f562-f329-11ea-2ee4-d7806a16ede3
@@ -963,14 +992,14 @@ bigbreak
 # ╠═abf20aa0-f31b-11ea-2548-9bea4fab4c37
 # ╟─5430d772-f397-11ea-2ed8-03ee06d02a22
 # ╟─f580527e-f397-11ea-055f-bb9ea8f12015
-# ╟─6f52c1a2-f395-11ea-0c8a-138a77f03803
-# ╠═2a7e49b8-f395-11ea-0058-013e51baa554
+# ╠═6f52c1a2-f395-11ea-0c8a-138a77f03803
+# ╟─2a7e49b8-f395-11ea-0058-013e51baa554
 # ╟─7ddee6fc-f394-11ea-31fc-5bd665a65bef
 # ╟─980b1104-f394-11ea-0948-21002f26ee25
 # ╟─9945ae78-f395-11ea-1d78-cf6ad19606c8
 # ╟─87efe4c2-f38d-11ea-39cc-bdfa11298317
 # ╟─f6571d86-f388-11ea-0390-05592acb9195
-# ╟─f626b222-f388-11ea-0d94-1736759b5f52
+# ╠═f626b222-f388-11ea-0d94-1736759b5f52
 # ╟─52452d26-f36c-11ea-01a6-313114b4445d
 # ╠═2a98f268-f3b6-11ea-1eea-81c28256a19e
 # ╟─32e9a944-f3b6-11ea-0e82-1dff6c2eef8d
@@ -985,8 +1014,12 @@ bigbreak
 # ╟─cbf29020-f3ba-11ea-2cb0-b92836f3d04b
 # ╟─8bc930f0-f372-11ea-06cb-79ced2834720
 # ╠═85033040-f372-11ea-2c31-bb3147de3c0d
+# ╠═e3c04f28-f509-11ea-3c99-fbb64c08b090
+# ╠═cab6afac-f509-11ea-34c2-a52677987c82
+# ╠═4df41846-f50a-11ea-2e44-2147d876d0ac
+# ╠═05c14dc8-f511-11ea-374c-5354089a4bbb
 # ╠═1d55333c-f393-11ea-229a-5b1e9cabea6a
-# ╠═d88bc272-f392-11ea-0efd-15e0e2b2cd4e
+# ╠═ca36dfbe-f510-11ea-262d-4beb22e86c24
 # ╠═e66ef06a-f392-11ea-30ab-7160e7723a17
 # ╟─c572f6ce-f372-11ea-3c9a-e3a21384edca
 # ╠═6d993a5c-f373-11ea-0dde-c94e3bbd1552
@@ -1016,7 +1049,7 @@ bigbreak
 # ╟─0fbe2af6-f381-11ea-2f41-23cd1cf930d9
 # ╟─48089a00-f321-11ea-1479-e74ba71df067
 # ╟─6b4d6584-f3be-11ea-131d-e5bdefcc791b
-# ╟─437ba6ce-f37d-11ea-1010-5f6a6e282f9b
+# ╠═437ba6ce-f37d-11ea-1010-5f6a6e282f9b
 # ╟─ef88c388-f388-11ea-3828-ff4db4d1874e
 # ╟─ef26374a-f388-11ea-0b4e-67314a9a9094
 # ╟─6bdbcf4c-f321-11ea-0288-fb16ff1ec526
