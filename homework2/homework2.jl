@@ -345,38 +345,49 @@ B = A[1,:]
 # ╔═╡ 55960f5a-f46f-11ea-0667-539c16d0e1f2
 C = A[:,1]
 
+# ╔═╡ db976ce6-f6ad-11ea-1cc8-ef68b9ecff34
+function col_offset_range(col, width)
+# 	deal with edge case indexing
+	if col == 1
+		return [0,1]
+	elseif col == width
+		return [-1,0]
+	else
+		return [-1,0,1]
+	end
+end
+
 # ╔═╡ abf20aa0-f31b-11ea-2548-9bea4fab4c37
 function greedy_seam(energies, starting_pixel::Int)
 # 	human readable sizes
-	height = size(energies,1)
-	width = size(energies,2)
+	height, width = size(energies)
 # 	init output array
-	greedy_path = fill(starting_pixel, height)
+	path = fill(starting_pixel, height)
+	col = starting_pixel
 	
-# 	find greedy path
 # 	for each row, starting from 2
-	for row_index in 2:height
+	for row in 2:height
 		
 # 		deal with edge case indexing
-		if greedy_path[row_index - 1] == 1
-			range = [0,1]
-		elseif greedy_path[row_index - 1] == width
-			range = [-1,0]
-		else
-			range = [-1,0,1]
-		end
+		range = col_offset_range(col, width)
 		
 # 		find the min energy of the two or three pixels below the previous greedy pixel
-		min = 1.0
+		min_energy = prod(size(energies))*1.0
+		min_offset = 0
+		
 		for offset in range
-			energy = energies[row_index, greedy_path[row_index - 1] + offset]
-			if energy < min
-				min = energy
-				greedy_path[row_index] = greedy_path[row_index - 1] + offset
+			energy = energies[row, col + offset]
+			if energy < min_energy
+				min_energy = energy
+				min_offset = offset
 			end
 		end
+		
+# 		record path and shift column
+		path[row] = col + min_offset
+		col += min_offset
 	end
-	return greedy_path
+	return path
 end
 
 # ╔═╡ 5430d772-f397-11ea-2ed8-03ee06d02a22
@@ -448,40 +459,36 @@ Return these two values in a tuple.
 
 # ╔═╡ 8ec27ef8-f320-11ea-2573-c97b7b908cb7
 ## returns lowest possible sum energy at pixel (i, j), and the column to jump to in row i+1.
-function least_energy(energies, i, j)
-# 	init
-	min = 1.0
-	next_index = j
+function least_energy(energies, row, col)
 # 	human readable sizes
-	height = size(energies,1)
-	width = size(energies,2)
+	height, width = size(energies)
+	next_col = 0
 	
 # 	base case
-	if i == height
-	   return (energies[i,j], next_index)
+	if row == height
+	   return (energies[row,col], 0)
+	end
 		
 # 	deal with edge case indexing
-	else
-		if j == 1
-			range = [0,1]
-		elseif j == width
-			range = [-1,0]
-		else
-			range = [-1,0,1]
+	range = col_offset_range(col, width)
+
+# 	find the minimum of the 2 or 3 below with recursive calls
+	min_energy = prod(size(energies))*1.0
+	min_offset = 0
+	for offset in range
+		energy = least_energy(energies, row + 1, col + offset)[1]
+		if energy < min_energy
+			min_energy = energy
+			min_offset = offset
+			
 		end
-		
-# 		2 or 3 recursive calls to lower pixels
-		for offset in range
-			lest_energy_below = least_energy(energies,i+1,j+offset)[1]
-			if lest_energy_below < min
-				min = lest_energy_below
-				next_index = j+offset
-			end
-		end
-		
-# 		add current to the least of the recursive calls
-		return (energies[i,j] + min, next_index)
 	end
+	total_energy = energies[row,col] + min_energy
+	next_col = col + min_offset
+
+# 	add current to the least of the recursive calls
+	return (total_energy, next_col)
+	
 end
 
 # ╔═╡ a7f3d9f8-f3bb-11ea-0c1a-55bbb8408f09
@@ -519,23 +526,18 @@ This will give you the method used in the lecture to perform [exhaustive search 
 # ╔═╡ 85033040-f372-11ea-2c31-bb3147de3c0d
 function recursive_seam(energies, starting_pixel)
 	height, width = size(energies)
-	recursive_path = fill(starting_pixel, height)
+	path = fill(starting_pixel, height)
+	col = starting_pixel
 	
-	for row_index in 2:height
-		recursive_path[row_index] = least_energy(energies, row_index-1, recursive_path[row_index-1])[2]
-		
+# 	for each row, starting from 2
+	for row in 2:height
+		prev_row = row - 1
+# 		least_energy of the previous row will give us the index in this row
+		path[row] = least_energy(energies, prev_row, col)[2]
+		col = path[row]
 	end
-	return recursive_path
-	
+	return path
 end
-
-# ╔═╡ e3c04f28-f509-11ea-3c99-fbb64c08b090
-md"Starting pixel: $(@bind recursive_starting_pixel Slider(1:size(greedy_test, 2); show_value=true))"
-
-# ╔═╡ 4df41846-f50a-11ea-2e44-2147d876d0ac
-# Don't know if the check box below is supposed to be able to finish in a reasonable time
-
-# But based on the Pika image above it seems to work properly
 
 # ╔═╡ 1d55333c-f393-11ea-229a-5b1e9cabea6a
 md"Compute shrunk image: $(@bind shrink_recursive CheckBox())"
@@ -586,22 +588,77 @@ You are expected to read and understand the [documentation on dictionaries](http
 """
 
 # ╔═╡ b1d09bc8-f320-11ea-26bb-0101c9a204e2
-function memoized_least_energy(energies, i, j, memory)
-	m, n = size(energies)
+function memoized_least_energy(energies, row, col, memory)
+	height, width = size(energies)
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+# 	check memory
+	mem_result = get(memory, (row,col), -1)
+	if mem_result > 0
+		return mem_result
+	end
+
+# 	not in memory
+# 	base case
+	if row == height
+		total_energy = energies[row,col]
+		push!(memory, (row,col) => total_energy)
+		return total_energy
+	end
+
+# 	deal with edge case indexing
+	range = col_offset_range(col, width)
+
+# 	recursive case
+# 	get minimum energy of the 2 or 3 pixels below with recursive calls
+	min_energy = prod(size(energies))*1.0
+	for offset in range
+		energy = memoized_least_energy(energies,row+1,col+offset, memory)[1]
+		if energy < min_energy
+			min_energy = energy
+		end
+	end
+
+# 	add current energy to the least energy of the recursive calls
+	total_energy = energies[row,col] + min_energy
+	
+# 	add result to memory and return
+	push!(memory, (row,col) => total_energy)
+	return total_energy
 end
 
 # ╔═╡ 3e8b0868-f3bd-11ea-0c15-011bbd6ac051
 function recursive_memoized_seam(energies, starting_pixel)
-	memory = Dict{Tuple{Int,Int}, Float64}() # location => least energy.
-	                                         # pass this every time you call memoized_least_energy.
-	m, n = size(energies)
+	memory = Dict{Tuple{Int,Int}, Float64}()
+
+	height, width = size(energies)
+	path = fill(starting_pixel, height)
+	col = path[1]
 	
-	# Replace the following line with your code.
-	[rand(1:starting_pixel) for i=1:m]
+# 	for each row, starting from 2
+	for row in 2:height
+# 		deal with edge case indexing
+		range = col_offset_range(col, width)
+
+# 		get minimum energy of the 2 or 3 pixels below
+# 		should mostly be hits in the memory
+		min_energy = prod(size(energies))*1.0
+		min_offset = 0
+		for offset in range
+			energy = memoized_least_energy(energies,row,col+offset, memory)
+			if energy < min_energy
+				min_energy = energy
+				min_offset = offset
+			end
+		end
+		
+# 		record path and increment column index
+		path[row] = col + min_offset
+		col += min_offset
+		
+	end
+	return path
 end
+
 
 # ╔═╡ 4e3bcf88-f3c5-11ea-3ada-2ff9213647b7
 md"Compute shrunk image: $(@bind shrink_dict CheckBox())"
@@ -618,20 +675,71 @@ Write a variation of `matrix_memoized_least_energy` and `matrix_memoized_seam` w
 """
 
 # ╔═╡ c8724b5e-f3bd-11ea-0034-b92af21ca12d
-function matrix_memoized_least_energy(energies, i, j, memory)
-	m, n = size(energies)
+function matrix_memoized_least_energy(energies, row, col, memory)
+	height, width = size(energies)
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+# 	check memory
+	if memory[row,col] > 0
+		return memory[row,col]
+	end
+
+# 	not in memory
+# 	base case
+	if row == height
+		memory[row,col] = energies[row,col]
+		return memory[row,col]
+	end
+
+# 	deal with edge case indexing
+	range = col_offset_range(col, width)
+
+# 	2 or 3 recursive calls to lower pixels
+	min_energy = prod(size(energies))*1.0
+	for offset in range
+		energy = 
+		matrix_memoized_least_energy(energies,row+1,col+offset, memory)
+		
+		if energy < min_energy
+			min_energy = energy
+		end
+	end
+	total_energy = energies[row,col] + min_energy
+
+# 	add current to the least of the recursive calls
+	memory[row,col] = total_energy
+	return total_energy
 end
 
 # ╔═╡ be7d40e2-f320-11ea-1b56-dff2a0a16e8d
 function matrix_memoized_seam(energies, starting_pixel)
-	memory = zeros(size(energies)) # use this as storage -- intially it's all zeros
-	m, n = size(energies)
+	memory = zeros(size(energies))
+	height, width = size(energies)
+	seam = fill(starting_pixel, height)
+	col = seam[1]
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+# 	for each row, starting from 2
+	for row in 2:height		
+		
+# 		deal with edge case indexing
+		range = col_offset_range(col, width)
+		
+# 		get minimum energy of the 2 or 3 pixels below
+# 		should mostly be hits in the memory
+		min_energy = prod(size(energies))*1.0
+		min_offset = 0
+		for offset in range
+			energy = matrix_memoized_least_energy(energies, row, col + offset, memory)
+			if energy < min_energy
+				min_energy = energy
+				min_offset = offset
+			end
+		end
+		
+# 		record path and increment column index
+		seam[row] = col+min_offset
+		col += min_offset
+	end
+	return seam
 end
 
 # ╔═╡ 507f3870-f3c5-11ea-11f6-ada3bb087634
@@ -650,7 +758,32 @@ Now it's easy to see that the above algorithm is equivalent to one that populate
 
 # ╔═╡ ff055726-f320-11ea-32f6-2bf38d7dd310
 function least_energy_matrix(energies)
-	copy(energies)
+	height, width = size(energies)
+	least_energies = copy(energies)
+	
+	for row in height:-1:1, col in 1:width	
+# 		bottom row:
+		if row == height
+			least_energies[row,col] = energies[row,col]
+# 		other rows:
+		else
+			
+# 			deal with edge case indexing
+			range = col_offset_range(col, width)
+			
+			min_energy = prod(size(energies))*1.0
+			for offset in range
+				energy = least_energies[row+1,col+offset]
+				if energy < min_energy
+					min_energy = energy
+				end
+			end
+			
+# 			add current energy to the least of the energies below
+			least_energies[row,col] = energies[row,col] + min_energy
+		end
+	end
+	return least_energies
 end
 
 # ╔═╡ 92e19f22-f37b-11ea-25f7-e321337e375e
@@ -663,10 +796,31 @@ md"""
 # ╔═╡ 795eb2c4-f37b-11ea-01e1-1dbac3c80c13
 function seam_from_precomputed_least_energy(energies, starting_pixel::Int)
 	least_energies = least_energy_matrix(energies)
-	m, n = size(least_energies)
+	height, width = size(energies)
+	seam = fill(starting_pixel, height)
+	col = starting_pixel
 	
-	# Replace the following line with your code.
-	[starting_pixel for i=1:m]
+# 	for each row after the first
+	for row in 2:height
+		
+# 		deal with edge case indexing
+		range = col_offset_range(col, width)
+		
+# 		find the min energy below
+		min_offset = 0
+		min_energy = prod(size(energies))*1.0
+		for offset in range
+			if least_energies[row,col+offset] < min_energy
+				min_energy = least_energies[row,col+offset]
+				min_offset = offset
+			end
+		end
+		
+# 		record the path
+		seam[row]=col+min_offset
+		col += min_offset
+	end
+	return seam
 end
 
 # ╔═╡ 51df0c98-f3c5-11ea-25b8-af41dc182bac
@@ -729,8 +883,8 @@ end
 
 # ╔═╡ 4e3ef866-f3c5-11ea-3fb0-27d1ca9a9a3f
 if shrink_dict
-	dict_carved = shrink_n(img, 200, recursive_memoized_seam)
-	md"Shrink by: $(@bind dict_n Slider(1:200, show_value=true))"
+	dict_carved = shrink_n(img, 2, recursive_memoized_seam)
+	md"Shrink by: $(@bind dict_n Slider(1:2, show_value=true))"
 end
 
 # ╔═╡ 6e73b1da-f3c5-11ea-145f-6383effe8a89
@@ -740,8 +894,8 @@ end
 
 # ╔═╡ 50829af6-f3c5-11ea-04a8-0535edd3b0aa
 if shrink_matrix
-	matrix_carved = shrink_n(img, 200, matrix_memoized_seam)
-	md"Shrink by: $(@bind matrix_n Slider(1:200, show_value=true))"
+	matrix_carved = shrink_n(img, 3, matrix_memoized_seam)
+	md"Shrink by: $(@bind matrix_n Slider(1:3, show_value=true))"
 end
 
 # ╔═╡ 9e56ecfa-f3c5-11ea-2e90-3b1839d12038
@@ -773,7 +927,7 @@ end
 
 # ╔═╡ ddba07dc-f3b7-11ea-353e-0f67713727fc
 # Do not make this image bigger, it will be infeasible to compute.
-pika = decimate(load(download("https://art.pixilart.com/901d53bcda6b27b.png")),77)
+pika = decimate(load(download("https://art.pixilart.com/901d53bcda6b27b.png")),150)
 
 # ╔═╡ 73b52fd6-f3b9-11ea-14ed-ebfcab1ce6aa
 size(pika)
@@ -785,19 +939,14 @@ if compute_access
 	tracked.accesses[]
 end
 
-# ╔═╡ 05c14dc8-f511-11ea-374c-5354089a4bbb
-pika2 = decimate(load(download("https://art.pixilart.com/901d53bcda6b27b.png")),150)
+# ╔═╡ e3c04f28-f509-11ea-3c99-fbb64c08b090
+md"Starting pixel: $(@bind recursive_starting_pixel Slider(1:size(energy(pika), 2); show_value=true))"
 
 # ╔═╡ ca36dfbe-f510-11ea-262d-4beb22e86c24
 if shrink_recursive
-    recursive_carved = shrink_n(pika2, 3, recursive_seam)
-    md"Shrink by: $(@bind recursive_n Slider(1:3, show_value=true))"
+	recursive_carved = shrink_n(pika, 3, recursive_seam)
+	md"Shrink by: $(@bind recursive_n Slider(1:3, show_value=true))"
 end
-
-# if shrink_recursive
-# 	recursive_carved = shrink_n(img, 200, recursive_seam)
-# 	md"Shrink by: $(@bind recursive_n Slider(1:200, show_value=true))"
-# end
 
 # ╔═╡ e66ef06a-f392-11ea-30ab-7160e7723a17
 if shrink_recursive
@@ -989,6 +1138,7 @@ bigbreak
 # ╠═acf5d38a-f46e-11ea-17cb-1bd23f52d3e1
 # ╠═d44d4a88-f46e-11ea-2919-cbae1b924062
 # ╠═55960f5a-f46f-11ea-0667-539c16d0e1f2
+# ╠═db976ce6-f6ad-11ea-1cc8-ef68b9ecff34
 # ╠═abf20aa0-f31b-11ea-2548-9bea4fab4c37
 # ╟─5430d772-f397-11ea-2ed8-03ee06d02a22
 # ╟─f580527e-f397-11ea-055f-bb9ea8f12015
@@ -1016,14 +1166,12 @@ bigbreak
 # ╠═85033040-f372-11ea-2c31-bb3147de3c0d
 # ╠═e3c04f28-f509-11ea-3c99-fbb64c08b090
 # ╠═cab6afac-f509-11ea-34c2-a52677987c82
-# ╠═4df41846-f50a-11ea-2e44-2147d876d0ac
-# ╠═05c14dc8-f511-11ea-374c-5354089a4bbb
 # ╠═1d55333c-f393-11ea-229a-5b1e9cabea6a
 # ╠═ca36dfbe-f510-11ea-262d-4beb22e86c24
 # ╠═e66ef06a-f392-11ea-30ab-7160e7723a17
 # ╟─c572f6ce-f372-11ea-3c9a-e3a21384edca
 # ╠═6d993a5c-f373-11ea-0dde-c94e3bbd1552
-# ╠═ea417c2a-f373-11ea-3bb0-b1b5754f2fac
+# ╟─ea417c2a-f373-11ea-3bb0-b1b5754f2fac
 # ╟─56a7f954-f374-11ea-0391-f79b75195f4d
 # ╠═b1d09bc8-f320-11ea-26bb-0101c9a204e2
 # ╠═3e8b0868-f3bd-11ea-0c15-011bbd6ac051
