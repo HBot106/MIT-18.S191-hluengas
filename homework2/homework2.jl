@@ -905,8 +905,8 @@ end
 
 # ╔═╡ 51e28596-f3c5-11ea-2237-2b72bbfaa001
 if shrink_bottomup
-	bottomup_carved = shrink_n(img, 200, seam_from_precomputed_least_energy)
-	md"Shrink by: $(@bind bottomup_n Slider(1:200, show_value=true))"
+	bottomup_carved = shrink_n(img, 10, seam_from_precomputed_least_energy)
+	md"Shrink by: $(@bind bottomup_n Slider(1:10, show_value=true))"
 end
 
 # ╔═╡ 0a10acd8-f3c6-11ea-3e2f-7530a0af8c7f

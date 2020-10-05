@@ -212,6 +212,9 @@ Let's load a picture of Philip again.
 # ╔═╡ c5484572-ee05-11ea-0424-f37295c3072d
 philip_file = download("https://i.imgur.com/VGPeJ6s.jpg")
 
+# ╔═╡ 3d5c008a-f883-11ea-37e8-5b3e5d217dd9
+
+
 # ╔═╡ e86ed944-ee05-11ea-3e0f-d70fc73b789c
 md"_Hi there Philip_"
 
@@ -641,9 +644,6 @@ and then **normalize** so that the sum of the resulting kernel is 1.
 
 For simplicity you can take $\sigma=1$.
 """
-
-# ╔═╡ 4af3cbf8-f381-11ea-1f3b-e58d36a0f80d
-pi
 
 # ╔═╡ 1c8b4658-ee0c-11ea-2ede-9b9ed7d3125e
 function gaussian_kernel(n)
@@ -1511,6 +1511,7 @@ end
 # ╟─e083b3e8-ed61-11ea-2ec9-217820b0a1b4
 # ╠═c5484572-ee05-11ea-0424-f37295c3072d
 # ╠═c8ecfe5c-ee05-11ea-322b-4b2714898831
+# ╠═3d5c008a-f883-11ea-37e8-5b3e5d217dd9
 # ╟─e86ed944-ee05-11ea-3e0f-d70fc73b789c
 # ╟─c54ccdea-ee05-11ea-0365-23aaf053b7d7
 # ╠═4b085d26-f20e-11ea-00e6-91fb40b66ec5
@@ -1573,7 +1574,7 @@ end
 # ╟─806e5766-ee0f-11ea-1efc-d753cd83d086
 # ╠═38da843a-ee0f-11ea-01df-bfa8b1317d36
 # ╟─9bde9f92-ee0f-11ea-27f8-ffef5fce2b3c
-# ╠═45c4da9a-ee0f-11ea-2c5b-1f6704559137
+# ╟─45c4da9a-ee0f-11ea-2c5b-1f6704559137
 # ╟─bcf98dfc-ee1b-11ea-21d0-c14439500971
 # ╟─80664e8c-ee09-11ea-0702-711bce271315
 # ╠═807e5662-ee09-11ea-3005-21fdcc36b023
@@ -1590,8 +1591,7 @@ end
 # ╠═93284f92-ee12-11ea-0342-833b1a30625c
 # ╟─cf73f9f8-ee12-11ea-39ae-0107e9107ef5
 # ╟─7ffd14f8-ee1d-11ea-0343-b54fb0333aea
-# ╟─80b7566a-ee09-11ea-3939-6fab470f9ec8
-# ╠═4af3cbf8-f381-11ea-1f3b-e58d36a0f80d
+# ╠═80b7566a-ee09-11ea-3939-6fab470f9ec8
 # ╠═1c8b4658-ee0c-11ea-2ede-9b9ed7d3125e
 # ╠═2a9dd06a-ee13-11ea-3f84-67bb309c77a8
 # ╠═e7e1c748-f382-11ea-1ef3-d1f1edeee00b
