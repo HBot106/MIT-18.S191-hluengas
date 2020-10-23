@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.11.14
+# v0.12.4
 
 using Markdown
 using InteractiveUtils
@@ -719,6 +719,17 @@ begin
 	end
 end
 
+# ╔═╡ 9c39974c-04a5-11eb-184d-317eb542452c
+let
+	agent = Agent(S, 0)
+	source = Agent(I, 0)
+	infection = InfectionRecovery(0.9, 0.5)
+	
+	interact!(agent, source, infection)
+	
+	(agent=agent, source=source)
+end
+
 # ╔═╡ 2ade2694-0425-11eb-2fb2-390da43d9695
 function step!(agents::Vector{Agent}, infection::AbstractInfection)
 	# select agents
@@ -732,6 +743,14 @@ function step!(agents::Vector{Agent}, infection::AbstractInfection)
 	
 	# interact them 	
 	interact!(rand_agent_1, rand_agent_2, infection)
+end
+
+# ╔═╡ d12d5fcc-0745-11eb-3aaa-a520e91ad2d6
+begin
+	infection = InfectionRecovery(1.0,0.1)
+	agents = generate_agents(2)
+	step!(agents, infection)
+	agents
 end
 
 # ╔═╡ 46133a74-04b1-11eb-0b46-0bc74e564680
@@ -761,24 +780,6 @@ function simulation(N::Integer, T::Integer, infection::AbstractInfection)
 	return (S=counts[S], I=counts[I], R=counts[R])
 end
 
-# ╔═╡ 38b1aa5a-04cf-11eb-11a2-930741fc9076
-function repeat_simulations(N, T, infection, num_simulations)
-	N = 100
-	T = 1000
-	
-	map(1:num_simulations) do _
-		simulation(N, T, infection)
-	end
-end
-
-# ╔═╡ d12d5fcc-0745-11eb-3aaa-a520e91ad2d6
-begin
-	infection = InfectionRecovery(1.0,0.1)
-	agents = generate_agents(2)
-	step!(agents, infection)
-	agents
-end
-
 # ╔═╡ b92f1cec-04ae-11eb-0072-3535d1118494
 simulation(3, 20, InfectionRecovery(0.9, 0.2))
 
@@ -799,6 +800,16 @@ let
 	result = plot(1:T, sim.S, ylim=(0, N), label="Susceptible")
 	plot!(result, 1:T, sim.I, ylim=(0, N), label="Infectious")
 	plot!(result, 1:T, sim.R, ylim=(0, N), label="Recovered")
+end
+
+# ╔═╡ 38b1aa5a-04cf-11eb-11a2-930741fc9076
+function repeat_simulations(N, T, infection, num_simulations)
+	N = 100
+	T = 1000
+	
+	map(1:num_simulations) do _
+		simulation(N, T, infection)
+	end
 end
 
 # ╔═╡ 80c2cd88-04b1-11eb-326e-0120a39405ea
@@ -831,17 +842,6 @@ sir_mean_plot(repeat_simulations(100, 1000, InfectionRecovery(interactive_infect
 
 # ╔═╡ b614ba72-0750-11eb-0dca-1704ad42575f
 sir_mean_error_plot(repeat_simulations(100, 1000, InfectionRecovery(0.02, 0.002), 20))
-
-# ╔═╡ 9c39974c-04a5-11eb-184d-317eb542452c
-let
-	agent = Agent(S, 0)
-	source = Agent(I, 0)
-	infection = InfectionRecovery(0.9, 0.5)
-	
-	interact!(agent, source, infection)
-	
-	(agent=agent, source=source)
-end
 
 # ╔═╡ 99ef7b2a-0403-11eb-08ef-e1023cd151ae
 md"""
